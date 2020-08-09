@@ -6,7 +6,7 @@ pub enum OledSsd1306ResultError {
     SomethingWrong(String),
     SpiError(String),
     GpioError(String),
-    EightPxUintEightError(String),
+    EightPxUintEightError(EightPxUintEightError),
 }
 
 impl std::fmt::Display for OledSsd1306ResultError {
@@ -25,6 +25,6 @@ impl From<GpioError> for OledSsd1306ResultError {
 
 impl From<EightPxUintEightError> for OledSsd1306ResultError {
     fn from(e: EightPxUintEightError) -> Self {
-        Self::EightPxUintEightError(e.to_string())
+        Self::EightPxUintEightError(e)
     }
 }

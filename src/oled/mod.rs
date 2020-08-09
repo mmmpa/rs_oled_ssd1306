@@ -21,14 +21,16 @@ pub enum Color {
     Dark = 0,
 }
 
-pub trait Image: Send + Sync + 'static {
+pub trait Image: Send + Sync {
     fn as_vec(&self) -> &[u8];
 }
 
 #[async_trait]
 pub trait Oled: OledCommand {
     fn height(&self) -> u8;
+
     fn width(&self) -> u8;
+
     fn page(&self) -> u8 {
         eight_px_uint_eight::compute_eight_length(self.height() as usize) as u8
     }
@@ -42,7 +44,7 @@ pub trait Oled: OledCommand {
     }
 
     async fn init(&self) -> OledSsd1306Result<()> {
-        self.reset_flow().await?;
+        self.reset().await?;
 
         self.off().await?;
 
@@ -87,21 +89,9 @@ pub trait Oled: OledCommand {
         Ok(())
     }
 
-    async fn fill(&self, color: Color) -> OledSsd1306Result<()> {
-        let w = self.width() as usize;
-        let p = self.page() as usize;
-
-        let eight_color = match color {
-            Color::Light => 0b1111_1111,
-            Color::Dark => 0b0000_0000,
-        };
-
-        self.draw_vec(&vec![eight_color; (w * p) as usize]).await
-    }
-
-    async fn reset_flow(&self) -> OledSsd1306Result<()> {
+    async fn reset(&self) -> OledSsd1306Result<()> {
         self.off().await?;
-        self.reset().await?;
+        self.reset_flow().await?;
         self.on().await?;
         Ok(())
     }
@@ -114,7 +104,19 @@ pub trait Oled: OledCommand {
         self.set_display_power(command::SetDisplayPower::Off).await
     }
 
-    async fn draw_image<IMG>(&self, image: IMG) -> OledSsd1306Result<()>
+    async fn fill(&self, color: Color) -> OledSsd1306Result<()> {
+        let w = self.width() as usize;
+        let p = self.page() as usize;
+
+        let eight_color = match color {
+            Color::Light => 0b1111_1111,
+            Color::Dark => 0b0000_0000,
+        };
+
+        self.draw_vec(&vec![eight_color; (w * p) as usize]).await
+    }
+
+    async fn draw_image<IMG>(&self, image: &IMG) -> OledSsd1306Result<()>
     where
         IMG: Image,
     {
@@ -122,7 +124,7 @@ pub trait Oled: OledCommand {
     }
 
     async fn draw_vec(&self, data: &[u8]) -> OledSsd1306Result<()> {
-        self.draw_raw(self.width(), self.page(), data).await
+        self.draw_flow(self.width(), self.page(), data).await
     }
 }
 
@@ -151,7 +153,7 @@ pub trait OledCommand {
         self.spi().send_data(data).await
     }
 
-    async fn reset(&self) -> OledSsd1306Result<()> {
+    async fn reset_flow(&self) -> OledSsd1306Result<()> {
         self.spi().reset_pin().write(1).await?;
         util::delay_for(10).await;
         self.spi().reset_pin().write(0).await?;
@@ -161,7 +163,7 @@ pub trait OledCommand {
         Ok(())
     }
 
-    async fn draw_raw(&self, width: u8, page: u8, data: &[u8]) -> OledSsd1306Result<()> {
+    async fn draw_flow(&self, width: u8, page: u8, data: &[u8]) -> OledSsd1306Result<()> {
         let shift = match width {
             64 => 32,
             72 => 24,
@@ -191,7 +193,6 @@ pub trait OledCommand {
         self.command(com as u8).await
     }
 
-    // light と dark の入れ替え
     async fn set_display_color(&self, com: command::SetDisplayColor) -> OledSsd1306Result<()> {
         self.command(com as u8).await
     }
