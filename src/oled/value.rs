@@ -1,6 +1,6 @@
 // https://cdn.sparkfun.com/assets/learn_tutorials/3/0/8/SSD1306.pdf
 
-pub(crate) mod command {
+pub mod command {
     pub const SET_CONTRAST_CONTROL: u8 = 0x81; // 1-256
 
     #[repr(u8)]
@@ -64,7 +64,7 @@ pub(crate) mod command {
     pub const SET_CHARGE_PUMP: u8 = 0x8D;
 }
 
-pub(crate) mod data {
+pub mod data {
     #[repr(u8)]
     pub enum SetMemoryAddressingMode {
         Horizontal = 0b00,
