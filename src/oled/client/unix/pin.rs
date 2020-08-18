@@ -1,21 +1,32 @@
-use crate::{OledSsd1306Result, Pin};
-use async_trait::async_trait;
-use poor_gpio::GpioWriter;
+use crate::*;
+use sysfs_gpio::{Direction, Pin};
 
-pub struct PinClient {
-    cli: poor_gpio::GpioWriterClient,
+pub struct OutputPinClient {
+    cli: Pin,
 }
 
-#[async_trait]
-impl Pin for PinClient {
-    async fn write(&self, value: u8) -> OledSsd1306Result<()> {
-        &self.cli.write(value as usize).await?;
+impl OutputPin for OutputPinClient {
+    fn set_high(&mut self) -> OledSsd1306Result<()> {
+        let led = self.cli;
+        led.with_exported(|| {
+            led.set_direction(Direction::Out)?;
+            led.set_value(1)
+        })?;
+        Ok(())
+    }
+
+    fn set_low(&mut self) -> OledSsd1306Result<()> {
+        let led = self.cli;
+        led.with_exported(|| {
+            led.set_direction(Direction::Out)?;
+            led.set_value(0)
+        })?;
         Ok(())
     }
 }
 
-impl PinClient {
-    pub fn new(cli: poor_gpio::GpioWriterClient) -> Self {
-        Self { cli }
+impl OutputPinClient {
+    pub fn new(n: u64) -> Self {
+        Self { cli: Pin::new(n) }
     }
 }

@@ -5,28 +5,32 @@ use poor_gpio::GpioError;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum OledSsd1306ResultError {
-    #[cfg(future = "std")]
-    SomethingWrong(String),
-    #[cfg(future = "std")]
+    #[cfg(feature = "std")]
     SpiError(String),
-    #[cfg(future = "std")]
+    #[cfg(feature = "std")]
     GpioError(String),
+
+    #[cfg(feature = "embedded")]
+    SpiError(&'static str),
+    #[cfg(feature = "embedded")]
+    GpioError(&'static str),
+
     EightPxUintEightError(EightPxUintEightError),
 }
 
-#[cfg(future = "std")]
+#[cfg(feature = "std")]
 impl std::fmt::Display for OledSsd1306ResultError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         write!(f, "{:?}", self)
     }
 }
 
-#[cfg(future = "std")]
+#[cfg(feature = "std")]
 impl std::error::Error for OledSsd1306ResultError {}
 
-#[cfg(future = "std")]
-impl From<GpioError> for OledSsd1306ResultError {
-    fn from(e: GpioError) -> Self {
+#[cfg(feature = "std")]
+impl From<sysfs_gpio::Error> for OledSsd1306ResultError {
+    fn from(e: sysfs_gpio::Error) -> Self {
         Self::GpioError(e.to_string())
     }
 }

@@ -1,2 +1,2 @@
-#[cfg(future = "std")]
+#[cfg(feature = "std")]
 mod unix;
